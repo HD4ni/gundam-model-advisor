@@ -13,10 +13,15 @@ load_dotenv()
 app = Flask(__name__)
 
 # 從環境變量讀取 API Key（生產環境推薦方式）
-# 本地開發：手動在 .env 文件中設置
-# 雲端部署：在平臺的環境變量設置中配置
-API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyAn97md7MDhpj5jT1VhN0DvCOWYXlXDv_g")
-SERPER_API_KEY = os.getenv("SERPER_API_KEY", "a97ea5beed46036758e7ea95dd41a30dd3b1046a")
+# 必須在環境變量中設置，不能有默認值（避免洩露）
+API_KEY = os.getenv("GOOGLE_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+
+# 檢查是否設置了必要的環境變量
+if not API_KEY:
+    raise ValueError("❌ 未設置 GOOGLE_API_KEY 環境變量。請在 .env 文件或平臺設置中配置。")
+if not SERPER_API_KEY:
+    raise ValueError("❌ 未設置 SERPER_API_KEY 環境變量。請在 .env 文件或平臺設置中配置。")
 
 # 初始化新版的 Client
 client = genai.Client(api_key=API_KEY)
