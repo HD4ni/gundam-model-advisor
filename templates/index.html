@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZEON TACTICAL OS - 模型情報終端</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        body { 
+            font-family: 'Share Tech Mono', '微軟正黑體', monospace; 
+            background-color: #1a221b; 
+            color: #7FFF00; 
+            max-width: 800px; 
+            margin: 40px auto; 
+            padding: 20px; 
+            background-image: repeating-linear-gradient(
+                0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px
+            );
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60vw;       
+            height: 60vh;
+            background-image: url('{{ url_for("static", filename="zeon_logo.png") }}');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.08;     
+            z-index: -1;       
+            pointer-events: none; 
+        }
+
+        .container {
+            border: 2px solid #5a7d5a;
+            border-radius: 5px;
+            padding: 30px;
+            background-color: rgba(10, 20, 10, 0.85);
+            box-shadow: 0 0 20px rgba(127, 255, 0, 0.1) inset;
+        }
+
+        .header {
+            border-bottom: 3px solid #d9534f;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 { 
+            color: #d9534f; 
+            margin: 0;
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(217, 83, 79, 0.6);
+        }
+
+        p.subtitle { color: #8fbc8f; font-size: 1.1em;}
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] { 
+            flex: 1; 
+            padding: 15px; 
+            font-size: 16px; 
+            background-color: #0d140d;
+            color: #7FFF00;
+            border: 1px solid #5a7d5a;
+            font-family: 'Share Tech Mono', '微軟正黑體', monospace;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            box-shadow: 0 0 10px rgba(127, 255, 0, 0.5);
+            border-color: #7FFF00;
+        }
+
+        button { 
+            padding: 15px 30px; 
+            font-size: 16px; 
+            background-color: #d9534f; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-family: 'Share Tech Mono', '微軟正黑體', monospace;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #c9302c;
+            box-shadow: 0 0 15px rgba(217, 83, 79, 0.8);
+        }
+
+        /* 專門設定 AI 回應區塊內 Markdown 渲染後的樣式 */
+        #responseArea { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background-color: #0a0f0a; 
+            border: 1px solid #5a7d5a; 
+            border-left: 5px solid #d9534f; 
+            min-height: 150px; 
+            line-height: 1.8; 
+            font-size: 1.05em;
+        }
+        
+        #responseArea h1, #responseArea h2, #responseArea h3 { color: #d9534f; margin-top: 20px;}
+        #responseArea strong { color: #ffeb3b; } /* 粗體字變醒目黃色 */
+        #responseArea ul { padding-left: 20px; }
+
+        /* 直接將 a 標籤設定成軍用按鈕樣式 */
+        /* 基礎按鈕樣式 */
+        #responseArea a {
+            display: inline-block;
+            color: #fff;
+            padding: 6px 14px;
+            margin: 8px 8px 8px 0;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.95em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        /* 針對包含 📺 (YouTube) 的連結套用紅色 */
+        #responseArea a[href*="youtube.com"], #responseArea a[href*="youtu.be"] {
+            background-color: #c9302c;
+            border: 1px solid #d9534f;
+        }
+        #responseArea a[href*="youtube.com"]:hover, #responseArea a[href*="youtu.be"]:hover {
+            box-shadow: 0 0 12px rgba(217, 83, 79, 0.8);
+            background-color: #d9534f;
+        }
+
+        /* 針對包含 📷 (Google 圖片搜尋) 的連結套用藍色 */
+        #responseArea a[href*="google.com/search?tbm=isch"] {
+            background-color: #337ab7;
+            border: 1px solid #2e6da4;
+        }
+        #responseArea a[href*="google.com/search?tbm=isch"]:hover {
+            box-shadow: 0 0 12px rgba(51, 122, 183, 0.8);
+            background-color: #286090;
+        }
+        
+        #responseArea a:hover {
+            background-color: #d9534f;
+            box-shadow: 0 0 10px rgba(217, 83, 79, 0.8);
+        }
+
+        /* 產品圖片容器樣式 */
+        .product-images {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            border: 1px solid #5a7d5a;
+            padding: 15px;
+            background-color: rgba(10, 20, 10, 0.6);
+            border-radius: 4px;
+        }
+
+        .product-images img {
+            max-width: 280px;
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid #7FFF00;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 8px rgba(127, 255, 0, 0.2);
+        }
+
+        .product-images img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(127, 255, 0, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>
+            <img src="{{ url_for('static', filename='zeon_logo.png') }}" alt="Zeon" style="height: 1.2em; vertical-align: middle; margin-right: 10px; opacity: 0.8;">
+            [ PRINCIPALITY OF ZEON ]
+        </h1>
+        <p class="subtitle">老兵的模型與機密機體相談室 v3.0 (YouTube 情報版)</p>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="輸入機體代號或名稱 (例: 攻擊自由鋼彈, 沙薩比)">
+        <button onclick="askVeteran()">發送檢索請求</button>
+    </div>
+
+    <div id="responseArea">等待機密通訊接入...</div>
+</div>
+
+<script>
+    async function askVeteran() {
+        const input = document.getElementById('userInput').value;
+        const responseArea = document.getElementById('responseArea');
+        
+        if(!input) return;
+        
+        responseArea.innerHTML = "資料庫檢索中，正在攔截聯邦的 YouTube 通訊網路...";
+
+        try {
+            const res = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input })
+            });
+
+            const data = await res.json();
+            if(data.reply) {
+                // 設定 marked 允許 HTML
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true
+                });
+                // 使用 marked.js 來解析 Markdown 變成 HTML，並允許內嵌 HTML
+                const htmlContent = marked.parse(data.reply);
+                responseArea.innerHTML = htmlContent;
+            } else {
+                responseArea.innerHTML = "<strong style='color:red;'>[系統錯誤]</strong> " + data.error;
+            }
+        } catch (error) {
+            responseArea.innerHTML = "<strong style='color:red;'>[系統崩潰]</strong> 通訊中斷。";
+        }
+    }
+</script>
+
+</body>
+</html>
